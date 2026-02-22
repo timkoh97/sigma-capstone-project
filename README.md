@@ -15,7 +15,7 @@ A short program to run a game of Hangman in the terminal. This version features 
 NB: words list includes some words <5 letters long. This can be edited in the main logic if desired.
 
 ## 🛠 Installation
-1. Clone the repo: "git clone [this repo](https://github.com/timkoh97/sigma-capstone-project.git)"
+1. Clone the repo: "git clone [https://github.com/timkoh97/sigma-capstone-project.git](https://github.com/timkoh97/sigma-capstone-project.git)"
 2. Navigate to the folder: "cd sigma-capstone-project"
 3. Ensure Python 3.9+ is installed
 
