@@ -17,11 +17,13 @@ Credit to MichaelWehar for the txt file of 5000 common English words (license: p
 Words of length 2 - 14.
 
 Things to add:
+>> Essential
     1. Display hangman - done
-    2. Offer to play again
+    2. Offer to play again or exit game - done
 
+>> Optional
     3. Collect overall game data (games won, lost etc)
-    4. Offer difficulty levels (more lives etc)
+    4. Offer difficulty levels (more lives etc) - done
 
 """
 
@@ -80,7 +82,7 @@ def get_guess(previous_guesses: list[str]) -> str:
         else:
             return guess.lower()
         
-def get_letter_positions(ANSWER: str, guess: str) -> list[int]:
+def get_correct_letter_positions(ANSWER: str, guess: str) -> list[int]:
     # function to find position of correctly guessed letters in answer str
     # returns the positions as list of int indices
     letter_positions = []
@@ -124,10 +126,10 @@ def get_difficulty() -> int:
     # return max lives
     
     print("Choose your difficulty: easy (10 lives) / medium (8 lives) / hard (6 lives)\n")
-    
+
     while True:
         options = ["e","m","h"]
-        guess = str(input("Easy(e), medium(m) or hard(h): "))
+        guess = input("Easy(e), medium(m) or hard(h): ")
         print("")
         if guess not in options:
             print("Invalid. Choose again.\n")
@@ -140,7 +142,61 @@ def get_difficulty() -> int:
         elif guess == "h":
             print("Understood.")
             return 6
-        
+
+def check_guess(guess: str, ANSWER: str, correct_letters, lives_lost) -> tuple[list[str], int]:
+    # check if the player is right -> update correct_letters if right, remove 1 life if wrong
+    if guess in ANSWER:
+        print("\n*** That's right. ***")
+        # check where the guessed letter is in the answer
+        letter_positions = get_correct_letter_positions(ANSWER, guess)
+
+        # update known letters for player
+        for index in letter_positions:
+            correct_letters[index] = guess
+
+    else:
+        print("\n::: Not that one. :::")
+        lives_lost += 1
+
+    return correct_letters, lives_lost
+
+def check_win_loss(correct_letters: list[str], ANSWER: str, lives_lost: int, max_lives: int, difficulty_offset: int) -> bool:
+    # check if player has won or lost and declare result if either, continue if neither
+    if "_" not in correct_letters:
+        print("\n======= Winner ========")
+        print(HANGMAN_DIAGRAMS[lives_lost + difficulty_offset])
+        print(f"\nThe word was: *** {ANSWER.upper()} ***\n")
+        return True
+    # check if the player has lost
+    elif lives_lost == max_lives:
+        print("\n====== Game over ======")
+        print(HANGMAN_DIAGRAMS[lives_lost + difficulty_offset])
+        print(f"\nThe word was: *** {ANSWER.upper()} ***\n")
+        print("You ran out of lives.\n")
+        return True
+    else:
+        return False
+    
+def get_user_replay_choice() -> str:
+    # ask user whether to play again or quit - with error catching
+
+    while True:
+        options = ["y","n"]
+        play_again = input("Play again (y/n): ")
+        print("")
+        if play_again not in options:
+            print("Invalid. Choose again.\n")
+        elif play_again == "y":
+            print("One more game!")
+            print("""
+***********************
+       New game
+***********************
+                  """)
+            return play_again
+        elif play_again == "n":
+            return play_again
+
 HANGMAN_DIAGRAMS = ["""
         
     ***BEWARE***
@@ -220,19 +276,33 @@ HANGMAN_DIAGRAMS = ["""
         ||
 +===========+"""]
 
-def game() -> None:
+def print_welcome() -> None:
     print("""
         
-    ================== Welcome to ==================
-    _   _    _    _   _  ____ __  __    _    _   _ 
-    | | | |  / \  | \ | |/ ___|  \/  |  / \  | \ | |
-    | |_| | / _ \ |  \| | |  _| |\/| | / _ \ |  \| |
-    |  _  |/ ___ \| |\  | |_| | |  | |/ ___ \| |\  |
-    |_| |_/_/   \_\_| \_|\____|_|  |_/_/   \_\_| \_|
+================== Welcome to ==================
+ _   _    _    _   _  ____ __  __    _    _   _ 
+| | | |  / \  | \ | |/ ___|  \/  |  / \  | \ | |
+| |_| | / _ \ |  \| | |  _| |\/| | / _ \ |  \| |
+|  _  |/ ___ \| |\  | |_| | |  | |/ ___ \| |\  |
+|_| |_/_/   \_\_| \_|\____|_|  |_/_/   \_\_| \_|
 
-    ================================ by Tim Koh ===
-        """)
+================================ by Tim Koh ===
+    """)
 
+def print_goodbye() -> None:
+    print("""
+        
+============== Thanks for playing ==============
+ _   _    _    _   _  ____ __  __    _    _   _ 
+| | | |  / \  | \ | |/ ___|  \/  |  / \  | \ | |
+| |_| | / _ \ |  \| | |  _| |\/| | / _ \ |  \| |
+|  _  |/ ___ \| |\  | |_| | |  | |/ ___ \| |\  |
+|_| |_/_/   \_\_| \_|\____|_|  |_/_/   \_\_| \_|
+
+================================ by Tim Koh ===
+    """)
+
+def hangman() -> None:
     # ask for answer length and check validity - integer between 5 and 14
     word_length = get_word_length()
     ANSWER = find_word(WORD_LIST, word_length)
@@ -260,29 +330,25 @@ def game() -> None:
         # update previously guessed letters for player
         previous_guesses.append(guess)
 
-        # check if the player is right or wrong
-        if guess in ANSWER:
-            print("\n*** That's right. ***")
-            # check where the guessed letter is in the answer
-            letter_positions = get_letter_positions(ANSWER, guess)
+        # check if the player is right or wrong and updated correct_letters and lives_lost (one or the other depending on result)
+        correct_letters, lives_lost = check_guess(guess, ANSWER, correct_letters, lives_lost)
 
-            # update known letters for player
-            for index in letter_positions:
-                correct_letters[index] = guess
-        else:
-            print("\n::: Not that one. :::")
-            lives_lost += 1
-
-        # check if the player has won
-        if "_" not in correct_letters:
-            print("\n===== Winner =====")
-            print(f"\nThe word was: *** {ANSWER} ***.")
-            break
-        # check if the player has lost
-        elif lives_lost == max_lives:
-            print("\n===== Game over =====\n")
-            print(HANGMAN_DIAGRAMS[lives_lost + difficulty_offset])
-            print("\nYou ran out of lives.\n")
+        # check if the player has won or lost and display result if so
+        if check_win_loss(correct_letters, ANSWER, lives_lost, max_lives, difficulty_offset):
             break
 
-game()
+def main() -> None:
+    # wrapper for the game - checks if player wants to play again at the end
+    print_welcome()
+
+    while True:
+        hangman()
+
+        # ask user if they want to play again
+        play_again = get_user_replay_choice()
+        if play_again == "n":
+            print_goodbye()
+            break
+
+# play the game
+main()
